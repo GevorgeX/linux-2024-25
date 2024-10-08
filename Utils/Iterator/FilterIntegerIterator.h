@@ -5,8 +5,9 @@ public:
     using value_type        = int;
     using pointer           = int*;
     using reference         = int&;
+    using UnraryIntPredicate = bool(*)(int);
 
-    FilterIntegerIterator(pointer ptr, size_t size, bool (*fun)(int)): m_ptr(ptr), m_end_ptr(ptr+size),m_fun(fun)
+    FilterIntegerIterator(pointer ptr, size_t size,UnraryIntPredicate fun): m_ptr(ptr), m_end_ptr(ptr+size),m_fun(fun)
     {
         while(!m_fun(*m_ptr) &&  m_ptr< m_end_ptr)
         {
@@ -40,5 +41,5 @@ public:
 private:
     pointer m_end_ptr;
     pointer m_ptr;
-    bool (*m_fun)(int);
+    UnraryIntPredicate m_fun;
 };
