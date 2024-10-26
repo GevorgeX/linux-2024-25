@@ -4,73 +4,101 @@
 #include <queue>
 
 class Directory{
+    enum DirType
+    {
+        Folder,
+        File
+    }type;
 
     std::string name;
-    std::vector<Directory> files;
+    std::vector<Directory*> childs;
     Directory* parent;
-    bool is_folder;
-    std::string get_path() const
-    {
-        return (parent == nullptr ? "" : parent->get_path()) + "/" + name;
-    }
+
 public:
-    Directory(std::string name, Directory* parent = nullptr, bool is_folder = true): parent(parent), name(name),is_folder(is_folder)
+    Directory(std::string name, DirType type = Folder,Directory* parent = nullptr ): type(type),
+        name(std::move(name)), parent(parent)
     {
-        auto dir = opendir(get_path().c_str());
-        if(dir == nullptr)
+        if (type == DirType::File)
         {
-            this->is_folder = false;
             return;
         }
+        auto dir = opendir(get_path().c_str());
         dirent* file;
-        readdir(dir);
-        readdir(dir);
-        while ((file  = readdir(dir)) != nullptr)
+        while ((file = readdir(dir)) != nullptr)
         {
-            files.emplace_back(file->d_name, this);
+            if(strcmp(file->d_name,".")  == 0  || strcmp(file->d_name,"..")  == 0 )
+                continue;
+
+            childs.push_back( new Directory( file->d_name,
+                                ( file->d_type == DT_DIR) ? DirType::Folder : DirType::File
+                                 , this));
         }
         closedir(dir);
     }
+
+    ~Directory()
+    {
+        for (auto child : childs)
+        {
+            delete child;
+        }
+    }
+
+    std::string get_path() const {
+        if (parent != nullptr) {
+            return parent->get_path() + "/" + name;
+        } else {
+            return name;
+        }
+    }
+
+    std::string get_name() const
+    {
+        return name;
+    }
+
     class RecursiveDirectoryIterator {
         std::queue<Directory*> queue;
-
     public:
-        RecursiveDirectoryIterator(Directory* root) {
-            if (root) {
-                queue.push(root);
-            }
+        RecursiveDirectoryIterator()= default;
+
+        RecursiveDirectoryIterator(Directory* root)
+        {
+            queue.push(root);
         }
 
-        Directory& operator*() {
-            while (queue.front()->is_folder && !queue.empty())
+        std::string operator*()
+        {
+            while (queue.front()->type == Folder)
             {
                 ++(*this);
             }
-            return *queue.front();
+            return queue.front()->name;
         }
 
         RecursiveDirectoryIterator& operator++() {
-            if (queue.empty()) return *this;
-
-            Directory* current = queue.front();
+            auto current = queue.front();
             queue.pop();
-            for (auto& child : current->files) {
-                queue.push(&child);
+            if(current->type == DirType::Folder)
+            {
+                for (auto& t : current->childs)
+                {
+                    queue.push(t);
+                }
             }
             return *this;
         }
+
         bool operator!=(const RecursiveDirectoryIterator& other) const {
             return queue != other.queue;
         }
     };
 
     RecursiveDirectoryIterator begin() {
-        return RecursiveDirectoryIterator(this);
+        return RecursiveDirectoryIterator{this};
     }
 
     RecursiveDirectoryIterator end() {
-        return RecursiveDirectoryIterator(nullptr);
+        return RecursiveDirectoryIterator{};
     }
-
-    std::string get_name(){return name;}
 };

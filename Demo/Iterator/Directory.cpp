@@ -3,9 +3,9 @@
 
 int main()
 {
-    Directory dir("some path");
-    for(auto& t : dir)
+    Directory dir("TEST");
+    for(auto t : dir)
     {
-        std::cout<<t.get_name()<<std::endl;
+        std::cout<<t<<std::endl;
     }
 }
