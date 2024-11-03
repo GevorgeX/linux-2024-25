@@ -4,68 +4,76 @@
 #include <unistd.h>
 #include <vector>
 
-class Argument
-{
+class Argument {
 public:
     char flag;
     std::optional<std::string> value;
-    Argument(char flag, std::optional<std::string> value = {}) : flag(flag), value(value) {}
+
+    explicit Argument(char flag, std::optional<std::string> value = {})
+        : flag(flag), value(std::move(value)) {}
 };
 
-class ArgumentParser
-{
+class ArgumentParser {
     int argc;
-    char **argv;
+    char** argv;
     std::vector<Argument> arguments;
-    public:
-    ArgumentParser(int argc, char** argv):argc(argc), argv(argv){}
-    void parse(const char *opstr)
-    {
+
+public:
+    ArgumentParser(int argc, char** argv)
+        : argc(argc), argv(argv) {}
+
+    void parse(const char* opstr) {
         opterr = 0;
         int rez;
-        while ((rez = getopt(argc, argv, opstr)) != -1){
-
-            if(rez == '?')
-                throw std::invalid_argument("Invalid option: "+ static_cast<char>(rez));
-
-            if(optarg != nullptr)
-            {
-                arguments.emplace_back(rez, std::string(optarg));
+        while ((rez = getopt(argc, argv, opstr)) != -1) {
+            if (rez == '?') {
+                throw std::invalid_argument("Invalid option: " + std::string(1, static_cast<char>(rez)));
             }
-            else
-            {
+
+            if (optarg != nullptr) {
+                arguments.emplace_back(rez, std::string(optarg));
+            } else {
                 arguments.emplace_back(rez);
             }
-
-        } 
+        }
     }
-    class Iterator
-    {
+
+    class Iterator {
         Argument* arr;
+
     public:
-        Iterator(Argument* arr):arr(arr){}
-        Argument* operator->() const {return arr;}
-        Argument& operator*() const {return *arr;}
-        Iterator operator++()
-        {
+        explicit Iterator(Argument* arr)
+            : arr(arr) {}
+
+        Argument* operator->() const {
+            return arr;
+        }
+
+        Argument& operator*() const {
+            return *arr;
+        }
+
+        Iterator& operator++() {
             arr++;
             return *this;
         }
-        Iterator operator++(int)
-        {
+
+        Iterator operator++(int) {
             Iterator tmp = *this;
             arr++;
             return tmp;
         }
-        bool operator!=(const Iterator& s) const{return arr !=s.arr;}
 
+        bool operator!=(const Iterator& other) const {
+            return arr != other.arr;
+        }
     };
-    Iterator begin()
-    {
+
+    Iterator begin() {
         return Iterator(arguments.data());
     }
-    Iterator end()
-    {
+
+    Iterator end() {
         return Iterator(arguments.data() + arguments.size());
     }
 };
