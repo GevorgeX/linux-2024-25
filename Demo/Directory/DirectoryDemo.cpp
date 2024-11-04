@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Iterator/Directory.h"
+#include "Directory/Directory.h"
 
 int main()
 {
