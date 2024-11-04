@@ -11,7 +11,7 @@ class Directory {
     } type;
 
     std::string name;
-    std::vector<Directory*> childs;
+    std::vector<std::unique_ptr<Directory>> childs;
     Directory* parent;
 
 public:
@@ -25,21 +25,14 @@ public:
         auto dir = opendir(get_path().c_str());
         dirent* file;
         while ((file = readdir(dir)) != nullptr) {
-            if (strcmp(file->d_name, ".") == 0 || strcmp(file->d_name, "..") == 0) {
+            if (file->d_name == std::string_view(".") ||file->d_name == std::string_view("..")) {
                 continue;
             }
 
-            childs.push_back(new Directory(file->d_name,
-                (file->d_type == DT_DIR) ? DirType::Folder : DirType::File,
-                this));
+            auto type_dir =  (file->d_type == DT_DIR) ? DirType::Folder : DirType::File;
+            childs.push_back(std::make_unique<Directory>(file->d_name, type_dir, this));
         }
         closedir(dir);
-    }
-
-    ~Directory() {
-        for (auto child : childs) {
-            delete child;
-        }
     }
 
     std::string get_path() const {
@@ -75,8 +68,8 @@ public:
             auto current = queue.front();
             queue.pop();
             if (current->type == DirType::Folder) {
-                for (auto& child : current->childs) {
-                    queue.push(child);
+                for (auto &child : current->childs) {
+                    queue.push(child.get());
                 }
             }
             return *this;
