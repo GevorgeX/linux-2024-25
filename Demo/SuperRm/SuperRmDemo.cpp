@@ -1,6 +1,6 @@
 #include "SuperRm/SuperRm.h"
 
-int main()
+int main(int argc, char** argv)
 {
-    SuperRm::remove("TEST",true,true);
+    SuperRm::remove(argc,argv);
 }

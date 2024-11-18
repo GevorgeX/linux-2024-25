@@ -1,12 +1,12 @@
 #pragma once
 #include <iostream>
-#include <stack>
 #include <string>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
-#include "Directory/Directory.h"
+#include <Directory/Directory.h>
+#include <ArgumentParser/ArgumentParser.h>
 
 class SuperRm {
     static void clear(const std::string& name) {
@@ -14,8 +14,14 @@ class SuperRm {
         struct stat st{};
         fstat(fd, &st);
         auto size = st.st_size;
-        const std::string buf(size, '0');
-        write(fd, buf.c_str(), size);
+
+        int buffer_size = 4096;
+        const std::string buf(buffer_size, '0');
+
+        for (off_t t = 0; t < size; t+= buffer_size )
+        {
+            write(fd, buf.c_str(), buffer_size);
+        }
         close(fd);
     }
 
@@ -39,7 +45,7 @@ class SuperRm {
             std::cout << "Removing " << name << "\n";
     }
 
-    static void remove_dir(const Directory& dir, bool debug_mode) {
+    static void remove_dir(const Directory& dir, bool debug_mode, bool recur) {
         switch (dir.get_type()) {
             case Directory::File:
                 clear(dir.get_path());
@@ -47,8 +53,11 @@ class SuperRm {
                 break;
 
             case Directory::Folder:
-                for (int i = 0; i < dir.size(); i++) {
-                    remove_dir(dir[i], debug_mode);
+                if(recur)
+                {
+                    for (int i = 0; i < dir.size(); i++) {
+                        remove_dir(dir[i], debug_mode, true);
+                    }
                 }
                 remove_folder(dir.get_path(), debug_mode);
                 break;
@@ -56,21 +65,34 @@ class SuperRm {
     }
 
 public:
-    static void remove(const std::string& name, bool remove_dirs = false, bool debug_mode = false) {
-        Directory dir(name);
-        if (remove_dirs) {
-            remove_dir(dir, debug_mode);
-        } else {
-            switch (dir.get_type()) {
-                case Directory::File:
-                    clear(dir.get_path());
-                    remove_file(dir.get_path(), debug_mode);
-                    break;
+    static void remove(int argc, char** argv) {
+        ArgumentParser arguments(argc, argv);
+        arguments.parse("rv");
 
-                case Directory::Folder:
-                    remove_folder(dir.get_path(), debug_mode);
-                    break;
-            }
+        std::string name(argv[optind]);
+        bool r = false;
+        bool v = false;
+        Directory dir(name);
+
+        for (auto &t : arguments)
+        {
+            if(t.flag == 'r')
+                r = true;
+            if(t.flag == 'v')
+                v = true;
         }
+
+
+        switch (dir.get_type()) {
+            case Directory::File:
+                clear(dir.get_path());
+                remove_file(dir.get_path(), v);
+                break;
+
+            case Directory::Folder:
+                remove_dir(dir, v ,r);
+                break;
+        }
+
     }
 };
