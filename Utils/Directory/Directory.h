@@ -13,9 +13,9 @@ public:
 
 private:
     DirType type;
+    std::string parent_dir;
     std::string name;
     std::vector<std::unique_ptr<Directory>> childs;
-    Directory* parent;
 
     void parse_childs()
     {
@@ -27,13 +27,13 @@ private:
             }
 
             auto type_dir = (file->d_type == DT_DIR) ? DirType::Folder : DirType::File;
-            childs.push_back(std::make_unique<Directory>(std::move(Directory(file->d_name, type_dir, this))));
+            childs.push_back(std::make_unique<Directory>(std::move(Directory(file->d_name, get_path(), type_dir))));
         }
         closedir(dir);
     }
 
-    explicit Directory(std::string name, DirType type, Directory* parent)
-    : type(type), name(std::move(name)), parent(parent)
+    explicit Directory(std::string  name ,std::string  parent_dir, DirType type)
+    : type(type), name(std::move(name)), parent_dir(std::move(parent_dir))
     {
         if (type == DirType::File) {
             return;
@@ -44,11 +44,16 @@ private:
 
 public:
     explicit Directory(std::string name)
-        :name(std::move(name)), parent(nullptr)
+        :name(std::move(name)), parent_dir(".")
     {
         auto dir = opendir(get_path().c_str());
+
         if(dir == nullptr)
         {
+            if(errno == ENOENT)
+            {
+                throw std::runtime_error(get_path()+" does not exist");
+            }
             type = DirType::File;
         }
         else
@@ -58,19 +63,14 @@ public:
         }
 
     }
-
-    const std::string get_path() const {
-        if (parent != nullptr) {
-            return parent->get_path() + "/" + name;
-        } else {
-            return name;
-        }
-    }
-
     const std::string& get_name() const {
         return name;
     }
 
+    const std::string get_path() const
+    {
+        return parent_dir+"/"+name;
+    }
     const Directory& operator[](const unsigned i) const
     {
         return *childs[i];
