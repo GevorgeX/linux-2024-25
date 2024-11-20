@@ -5,23 +5,20 @@
 #include <string>
 
 class Directory {
+public:
     enum DirType {
         Folder,
         File
-    } type;
+    };
 
+private:
+    DirType type;
+    std::string parent_dir;
     std::string name;
     std::vector<std::unique_ptr<Directory>> childs;
-    Directory* parent;
 
-public:
-    explicit Directory(std::string name, DirType type = Folder, Directory* parent = nullptr)
-        : type(type), name(std::move(name)), parent(parent)
+    void parse_childs()
     {
-        if (type == DirType::File) {
-            return;
-        }
-
         auto dir = opendir(get_path().c_str());
         dirent* file;
         while ((file = readdir(dir)) != nullptr) {
@@ -29,22 +26,64 @@ public:
                 continue;
             }
 
-            auto type_dir =  (file->d_type == DT_DIR) ? DirType::Folder : DirType::File;
-            childs.push_back(std::make_unique<Directory>(file->d_name, type_dir, this));
+            auto type_dir = (file->d_type == DT_DIR) ? DirType::Folder : DirType::File;
+            childs.push_back(std::make_unique<Directory>(std::move(Directory(file->d_name, get_path(), type_dir))));
         }
         closedir(dir);
     }
 
-    std::string get_path() const {
-        if (parent != nullptr) {
-            return parent->get_path() + "/" + name;
-        } else {
-            return name;
+    explicit Directory(std::string  name ,std::string  parent_dir, DirType type)
+    : type(type), name(std::move(name)), parent_dir(std::move(parent_dir))
+    {
+        if (type == DirType::File) {
+            return;
         }
+
+        parse_childs();
     }
 
-    std::string get_name() const {
+public:
+    explicit Directory(std::string name)
+        :name(std::move(name)), parent_dir(".")
+    {
+        auto dir = opendir(get_path().c_str());
+
+        if(dir == nullptr)
+        {
+            if(errno == ENOENT)
+            {
+                throw std::runtime_error(get_path()+" does not exist");
+            }
+            type = DirType::File;
+        }
+        else
+        {
+            type = DirType::Folder;
+            parse_childs();
+        }
+
+    }
+    const std::string& get_name() const {
         return name;
+    }
+
+    const std::string get_path() const
+    {
+        return parent_dir+"/"+name;
+    }
+    const Directory& operator[](const unsigned i) const
+    {
+        return *childs[i];
+    }
+
+    unsigned size() const
+    {
+        return (type == Folder) ? childs.size() : 0;
+    }
+
+    DirType get_type() const
+    {
+        return type;
     }
 
     class RecursiveDirectoryIterator {
