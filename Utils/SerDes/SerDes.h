@@ -7,31 +7,49 @@
 #include <cstring>
 
 template<class T>
-void serialization(const std::string& file, const T* obj ) {
-    int fd = open(file.c_str(), O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR);
+void serialization(const std::string& file, const T& obj ) {
+    int fd = open(file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (fd == -1) {
+        throw std::runtime_error("Failed to open file");
+    }
 
-    auto bytes = reinterpret_cast<const char*>(obj);
-    write(fd, bytes, sizeof(T));
+    size_t length = sizeof(T);
+    if (ftruncate(fd, length) == -1) {
+        close(fd);
+        throw std::runtime_error("Failed to resize file");
+    }
 
+    void* t = mmap(nullptr, length,  PROT_WRITE, MAP_SHARED, fd, 0);
+    if (t == MAP_FAILED) {
+        close(fd);
+        throw std::runtime_error("Failed to mmap file");
+    }
+
+    std::memcpy(t, &obj, length);
+
+    munmap(t, length);
     close(fd);
 }
 
 template<class T>
-void deserialization(const std::string& file, T* obj) {
+void deserialization(const std::string& file, T& obj) {
     int fd = open(file.c_str(), O_RDONLY);
-    struct stat st{};
-    fstat(fd, &st);
-
-    auto t = mmap(0, st.st_size, PROT_READ, MAP_SHARED,
-        fd, 0);
-
-    if (t == MAP_FAILED) {
-        perror("mmap");
-        return;
+    if (fd == -1) {
+        throw std::runtime_error("Failed to open file");
     }
 
-    std::memcpy(obj, t, st.st_size);
+    size_t length = sizeof(T);
 
-    munmap(t, st.st_size);
+    auto t = mmap(nullptr,length, PROT_READ, MAP_PRIVATE,
+                  fd, 0);
+
+    if (t == MAP_FAILED) {
+        close(fd);
+        throw std::runtime_error("Failed to mmap file");
+    }
+
+    std::memcpy(&obj, t, length);
+
+    munmap(t, length);
     close(fd);
 }
