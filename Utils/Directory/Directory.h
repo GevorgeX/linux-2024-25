@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <dirent.h>
+#include <memory>
 #include <queue>
 #include <string>
 
