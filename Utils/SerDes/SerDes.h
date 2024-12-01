@@ -17,7 +17,6 @@ public:
                   int fd, off_t offset):length(length) {
         auto t = mmap(addr, length, prot, flags, fd, offset);
         if (t == MAP_FAILED) {
-            close(fd);
             throw std::runtime_error("Failed to mmap file");
         }
         data = static_cast<std::byte*>(t);
