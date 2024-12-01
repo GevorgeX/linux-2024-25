@@ -6,7 +6,7 @@ struct ST {
     long long b;
     char c;
 
-    ST() : a(0), b(0), c('\0') {}
+    ST() = default;
     ST(unsigned int a, long long b, char c) : a(a), b(b), c(c) {}
 };
 
@@ -64,6 +64,6 @@ int main() {
         Mec another_obj{};
         deserialization("temp4.txt",another_obj);
 
-        std::cout<<"First field: " << obj.m_data[1025] <<" == "<< another_obj.m_data[1025] << std::endl;
+        std::cout<<"First field: " << std::memcmp(obj.m_data, another_obj.m_data, 1024*1024)<< std::endl;
     }
 }
