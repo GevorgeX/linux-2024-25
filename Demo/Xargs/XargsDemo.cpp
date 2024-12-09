@@ -4,6 +4,6 @@
 
 int main(int argc, char* argv[]) {
     // test from console
-    // like echo "/" ./xargs ls -la
+    // like echo "/" | ./xargs ls -la
     xargs(argc, argv);
 }
