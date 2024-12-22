@@ -10,7 +10,7 @@ void DoCommand(const std::string& cmd){
     }
     else
     {
-        int ret;
-        wait(&ret);
+        int status;
+        waitpid(child, &status, 0)
     }
 }
