@@ -1,5 +1,6 @@
 add_executable(Directory DirectoryDemo.cpp)
 target_include_directories(Directory PRIVATE ../../Utils/)
+target_link_libraries(Directory PRIVATE libutils)
 
 add_custom_command(TARGET Directory POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory

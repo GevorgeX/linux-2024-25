@@ -3,6 +3,7 @@ project(linux_homeworks)
 
 set(CMAKE_CXX_STANDARD 20)
 
+add_subdirectory(Utils)
 add_subdirectory(Demo/Iterator)
 add_subdirectory(Demo/Directory)
 add_subdirectory(Demo/Magic)
