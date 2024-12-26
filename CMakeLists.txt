@@ -10,4 +10,6 @@ add_subdirectory(Demo/SuperRm)
 add_subdirectory(Demo/ArgumentParser)
 add_subdirectory(Demo/Cp)
 add_subdirectory(Demo/SerDes)
+add_subdirectory(Demo/DirectoryWatcher)
 add_subdirectory(Demo/Allocator)
+
