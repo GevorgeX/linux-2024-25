@@ -10,4 +10,5 @@ add_library(libutils
         SerDes/SerDes.cpp
         DoCommand/DoCommand.cpp
         Xargs/Xargs.cpp
+        DirectoryWatcher/DirectoryWatcher.cpp
 )
