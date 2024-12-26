@@ -1,19 +1,6 @@
 #include <iostream>
 #include <SerDes/SerDes.h>
 
-struct ST {
-    unsigned int a;
-    long long b;
-    char c;
-
-    ST() = default;
-    ST(unsigned int a, long long b, char c) : a(a), b(b), c(c) {}
-};
-
-struct Mec {
-    char m_data[1024*1024];
-};
-
 int main() {
     std::cout << "TEST 1\n";
     {
