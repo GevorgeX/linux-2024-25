@@ -5,13 +5,68 @@
 
 template <class  T>
 class BlockingQueue {
-    std::queue<T> queue;
-    std::mutex mtx;
-    std::condition_variable cond_var;
-    int max_size;
+    std::queue<T> m_queue;
+    std::mutex m_mtx;
+    std::condition_variable m_cond_var;
+    size_t m_max_size;
 public:
-    explicit BlockingQueue(int size);
-    void push(const T& t);
-    T pop();
-    int size() const;
+    explicit BlockingQueue(size_t size):m_max_size(size) {
+    }
+
+    ~BlockingQueue()
+    {
+        m_cond_var.notify_all();
+    }
+
+    void push(const T& t) noexcept {
+        std::unique_lock<std::mutex> lock{m_mtx};
+        m_cond_var.wait(lock,
+                      [this] () { return m_queue.size() < m_max_size; }
+                      );
+        m_queue.push(t);
+        lock.unlock();
+        m_cond_var.notify_one();
+    }
+
+    void push(T&& t) noexcept {
+        std::unique_lock<std::mutex> lock{m_mtx};
+        m_cond_var.wait(lock,
+                      [this] () { return m_queue.size() < m_max_size; }
+                      );
+        m_queue.push(t);
+        lock.unlock();
+        m_cond_var.notify_one();
+    }
+
+    T pop() noexcept {
+        std::unique_lock<std::mutex> lock(m_mtx);
+        m_cond_var.wait(lock, [this] { return !m_queue.empty(); });
+        auto value = m_queue.front();
+        m_queue.pop();
+        lock.unlock();
+        m_cond_var.notify_one();
+
+        return value;
+    }
+
+    void try_push(const T& t)
+    {
+        m_queue.push(t);
+    }
+
+    void try_push(T&& t)
+    {
+        m_queue.push(t);
+    }
+
+    T try_pop()
+    {
+        auto value = m_queue.front();
+        return value;
+    }
+
+    size_t size() const {
+        return m_queue.size();
+    }
+
 };
