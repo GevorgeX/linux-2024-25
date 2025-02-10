@@ -11,4 +11,5 @@ add_library(libutils
         DoCommand/DoCommand.cpp
         Xargs/Xargs.cpp
         DirectoryWatcher/DirectoryWatcher.cpp
+        Thread/BlockingQueue/BlockingQueue.cpp
 )
