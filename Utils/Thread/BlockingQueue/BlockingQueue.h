@@ -16,6 +16,11 @@ public:
 
     ~BlockingQueue()
     {
+        {
+            std::lock_guard<std::mutex> lock(m_mtx);
+            m_done = true;
+        }
+
         m_cond_var.notify_all();
     }
 
