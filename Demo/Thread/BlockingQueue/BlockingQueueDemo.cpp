@@ -7,6 +7,25 @@
 
 #include "Thread/BlockingQueue/BlockingQueue.h"
 
+int test1() {
+    BlockingQueue<int>* queue = new BlockingQueue<int>(1);
+
+    queue->push(1);
+
+    std::thread prod([](BlockingQueue<int>* q) {
+    std::cout << "Producer started, trying to push..." << std::endl;
+    q->push(42);
+    std::cout << "Producer finished push!" << std::endl;
+        }, queue);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::cout << "Main thread: Destroying queue!" << std::endl;
+    delete queue;
+
+    prod.join();
+    std::cout << "Main thread: Finished!" << std::endl;
+}
+
 int test2() {
 
     BlockingQueue<int> queue(10);
@@ -35,6 +54,5 @@ int test2() {
 
 
 int main() {
-    // test1();
-    test2();
+    test1();
 }
