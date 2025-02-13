@@ -1,6 +1,7 @@
 #pragma once
 #include <condition_variable>
 #include <mutex>
+#include <optional>
 #include <queue>
 
 template <class  T>
@@ -16,11 +17,8 @@ public:
 
     ~BlockingQueue()
     {
-        {
-            std::lock_guard<std::mutex> lock(m_mtx);
-            m_done = true;
-        }
-
+        std::lock_guard<std::mutex> lock(m_mtx);
+        m_done = true;
         m_cond_var.notify_all();
     }
 
@@ -44,7 +42,7 @@ public:
         m_cond_var.notify_one();
     }
 
-    T pop() noexcept {
+    T pop() {
         std::unique_lock<std::mutex> lock(m_mtx);
         m_cond_var.wait(lock, [this] { return !m_queue.empty(); });
         auto value = m_queue.front();
@@ -55,27 +53,41 @@ public:
         return value;
     }
 
-    void try_push(const T& t)
+    bool try_push(const T& t) noexcept
     {
         std::unique_lock<std::mutex> lock{m_mtx};
+        if(m_queue.size() >= m_max_size)
+        {
+            return false;
+        }
         m_queue.push(t);
+        return true;
     }
 
-    void try_push(T&& t)
+    bool try_push(T&& t) noexcept
     {
         std::unique_lock<std::mutex> lock{m_mtx};
+        if(m_queue.size() >= m_max_size)
+        {
+            return false;
+        }
         m_queue.push(t);
+        return true;
     }
 
-    T try_pop()
+    std::optional<T> try_pop() noexcept
     {
         std::unique_lock<std::mutex> lock{m_mtx};
+        if(m_queue.empty())
+        {
+            return std::nullopt;
+        }
         auto value = m_queue.front();
         m_queue.pop();
         return value;
     }
 
-    size_t size() {
+    size_t size() noexcept {
         std::unique_lock<std::mutex> lock{m_mtx};
         return m_queue.size();
     }
