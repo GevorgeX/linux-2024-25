@@ -12,67 +12,66 @@ class BlockingQueue {
     std::condition_variable m_done_wait;
     const size_t m_max_size;
     bool m_done = false;
-    int thread_count = 0;
+    int m_thread_count = 0;
+
 public:
     explicit BlockingQueue(size_t size):m_max_size(size) {
     }
 
     ~BlockingQueue()
     {
-
         std::unique_lock<std::mutex> lock(m_mtx);
         m_done = true;
 
         m_cond_var.notify_all();
         m_done_wait.wait(lock, [&]() {
-                    return thread_count == 0;
+                    return m_thread_count == 0;
                 });
-        std::cout<< "DESTRUCTOR----------------------------------" << std::endl;
     }
 
     void push(const T& t) noexcept  {
         std::unique_lock<std::mutex> lock{m_mtx};
-        thread_count++;
+        m_thread_count++;
         m_cond_var.wait(lock,
                       [this] () { return m_done || m_queue.size() < m_max_size; }
                       );
         m_queue.push(t);
 
-        if (--thread_count == 0) {
+        m_thread_count--;
+        if (m_thread_count == 0) {
             m_done_wait.notify_one();
         }
-        std::cout<<"PUSH "<<std::endl;
         lock.unlock();
         m_cond_var.notify_one();
     }
 
     void push(T&& t) noexcept  {
         std::unique_lock<std::mutex> lock{m_mtx};
-        thread_count++;
+        m_thread_count++;
         m_cond_var.wait(lock,
                       [this] () { return m_done || m_queue.size() < m_max_size; }
                       );
         m_queue.push(t);
-        if (--thread_count == 0) {
+
+        m_thread_count--;
+        if (m_thread_count == 0) {
             m_done_wait.notify_one();
         }
-        std::cout<<"PUSH "<<std::endl;
         lock.unlock();
         m_cond_var.notify_one();
     }
 
     T pop() {
         std::unique_lock<std::mutex> lock(m_mtx);
-        thread_count++;
+        m_thread_count++;
         m_cond_var.wait(lock, [this] { return m_done || !m_queue.empty(); });
         auto value = m_queue.front();
         m_queue.pop();
 
-        if (--thread_count == 0) {
+        m_thread_count--;
+        if (m_thread_count == 0) {
             m_done_wait.notify_one();
         }
-        std::cout<<"POP "<<std::endl;
-
         lock.unlock();
         m_cond_var.notify_one();
 
