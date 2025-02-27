@@ -29,10 +29,7 @@ public:
 
         for (int i = 0; i < m_threads_num; ++i) {
             m_tasks.push([]()
-                {
-                    std::cout << std::this_thread::get_id() << " exitting\n\n";
-                    // Dummy task to enable the threads to break off from the wait and pop function
-                });
+                {});
         }
 
         for (auto& thread : m_threads) {
@@ -57,5 +54,4 @@ public:
 
         return res;
     }
-
 };
