@@ -3,7 +3,10 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#ifndef __APPLE__
 #include <syncstream>
+#endif
+
 
 #include "Thread/BlockingQueue/BlockingQueue.h"
 
@@ -32,9 +35,20 @@ int test2() {
 
     std::thread producerThread([&] {
         for (int i = 1; i <= 20; ++i) {
-            std::osyncstream(std::cout) << "Producing " << std::endl;
+            #ifndef __APPLE__
+            std::osyncstream(std::cout)
+            #else
+            std::cout
+            #endif
+            << "Producing " << std::endl;
             queue.push(10);
-            std::osyncstream(std::cout) << "Buffer size after producing: " << queue.size() << std::endl << std::endl;
+
+            #ifndef __APPLE__
+            std::osyncstream(std::cout)
+            #else
+            std::cout
+            #endif
+            << "Buffer size after producing: " << queue.size() << std::endl << std::endl;
         }
     });
 
@@ -43,8 +57,18 @@ int test2() {
     std::thread consumerThread([&] {
         for (int i = 1; i <= 20; ++i) {
             int value = queue.pop();
-            std::osyncstream(std::cout) << "Consuming " << value << std::endl;
-            std::osyncstream(std::cout) << "Buffer size after consuming: " << queue.size() << std::endl << std::endl;
+            #ifndef __APPLE__
+            std::osyncstream(std::cout)
+            #else
+            std::cout
+            #endif
+            << "Consuming " << value << std::endl;
+            #ifndef __APPLE__
+            std::osyncstream(std::cout)
+            #else
+            std::cout
+            #endif
+            << "Buffer size after consuming: " << queue.size() << std::endl << std::endl;
         }
     });
     producerThread.join();

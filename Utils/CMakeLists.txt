@@ -1,5 +1,4 @@
-add_library(libutils
-        Iterator/CircularIntIterator.cpp
+set(SOURCES Iterator/CircularIntIterator.cpp
         Iterator/FilterIntegerIterator.cpp
         Iterator/ReverseArrayIterator.cpp
         Allocator/Allocator.cpp
@@ -10,5 +9,10 @@ add_library(libutils
         SerDes/SerDes.cpp
         DoCommand/DoCommand.cpp
         Xargs/Xargs.cpp
-        DirectoryWatcher/DirectoryWatcher.cpp
 )
+
+if(NOT APPLE)
+    list(APPEND SOURCES DirectoryWatcher/DirectoryWatcher.cpp)
+endif ()
+
+    add_library(libutils ${SOURCES})
