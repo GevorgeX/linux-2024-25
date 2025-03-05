@@ -18,12 +18,18 @@ int main()
     sigemptyset(&sa.sa_mask);
     sigaction(SIGILL, &sa, nullptr);
 
+    struct sigaction ss{};
+    ss.sa_sigaction = [](int, siginfo_t *, void*)
+    {};
+    ss.sa_flags = SA_SIGINFO;
+    sigemptyset(&ss.sa_mask);
+    sigaction(SIGINT, &ss, nullptr);
+
     while (getline(MyFile, s))
     {
         int num = std::stoi(s);
         kill(num,SIGINT);
-
+        pause();
     }
     MyFile.close();
-    while (true){}
 }
