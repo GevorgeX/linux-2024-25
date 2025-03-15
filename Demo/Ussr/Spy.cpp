@@ -27,6 +27,15 @@ int main()
     std::mt19937 g(rd());
     std::shuffle(procs.begin(), procs.end(), g);
 
+    struct sigaction sa{};
+    sa.sa_sigaction = [](int, siginfo_t *info, void*)
+    {
+        std::cout<<"HI HITLER\n";
+        kill(info->si_pid, SIGILL);
+    };
+    sa.sa_flags = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+
     for (auto &prc : procs)
     {
         pid_t pid = fork();
@@ -34,25 +43,6 @@ int main()
         {
             if( prc.first) //spy
             {
-                struct sigaction sa{};
-                sa.sa_sigaction = [](int, siginfo_t *info, void*)
-                {
-                    std::cout<<"HI HITLER\n";
-                    kill(info->si_pid, SIGILL);
-                };
-                sa.sa_flags = SA_SIGINFO;
-                sigemptyset(&sa.sa_mask);
-                sigaction(SIGINT, &sa, nullptr);
-            }
-            else {
-                struct sigaction sa{};
-                sa.sa_sigaction = [](int, siginfo_t *info, void*)
-                {
-                    std::cout<<"Axper es lav txa em\n";
-                    kill(info->si_pid, SIGINT);
-                };
-                sa.sa_flags = SA_SIGINFO;
-                sigemptyset(&sa.sa_mask);
                 sigaction(SIGINT, &sa, nullptr);
             }
 
@@ -76,7 +66,6 @@ int main()
             waitpid(prc.second,&status,0);
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(2));
     for (auto prc : procs) {
         kill(prc.second, SIGTERM);
     }
