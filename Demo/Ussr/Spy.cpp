@@ -9,12 +9,8 @@
 
 int main()
 {
-    int proc_count;
-    std::cout << "Select proces count: " << std::endl;
-    std::cin >> proc_count;
-    int spy_count;
-    std::cout << "Select spy count: " << std::endl;
-    std::cin >> spy_count;
+    constexpr int proc_count = 30;
+    constexpr int spy_count = 10;
 
     std::ofstream MyFile("postman.txt");
     MyFile.clear();
