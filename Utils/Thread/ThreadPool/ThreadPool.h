@@ -39,19 +39,17 @@ public:
     }
 
     template<typename F, typename... Args>
-    auto enqueue(F&& f, Args&&... args) {
-        using return_type = std::invoke_result_t<F, Args...>;
+    auto enqueue(F&& f, Args&&... args) -> std::future<typename std::result_of<F(Args...)>::type> {
+        using R = typename std::invoke_result<F, Args...>::type;
 
-        auto task = std::make_shared<std::packaged_task<return_type()>>(
-            [f = std::forward<F>(f), ...args = std::forward<Args>(args)]() mutable {
-                return std::invoke(std::move(f), std::move(args)...);
+        auto task = std::make_shared<std::packaged_task<R()>>(
+            [f = std::forward<F>(f), args = std::make_tuple(std::forward<Args>(args)...)]() -> R {
+                return std::apply(f, args);
             }
         );
 
-        std::future<return_type> res = task->get_future();
         m_tasks.push([task]() { (*task)(); });
-
-        return res;
+        return task->get_future();
     }
 
 };

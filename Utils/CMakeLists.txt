@@ -15,4 +15,4 @@ if(NOT APPLE)
     list(APPEND SOURCES DirectoryWatcher/DirectoryWatcher.cpp)
 endif ()
 
-    add_library(libutils ${SOURCES})
+add_library(libutils ${SOURCES})
